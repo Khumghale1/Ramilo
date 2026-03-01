@@ -9,9 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MySavesRouteImport } from './routes/my-saves'
+import { Route as MyPlansRouteImport } from './routes/my-plans'
 import { Route as BusinessRouteImport } from './routes/business'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AddBusinessRouteImport } from './routes/add-business'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlacePlaceIdRouteImport } from './routes/place/$placeId'
 import { Route as MoodTouristDayOutRouteImport } from './routes/mood/tourist-day-out'
 import { Route as MoodQuietWorkRouteImport } from './routes/mood/quiet-work'
 import { Route as MoodFamilyDinnerRouteImport } from './routes/mood/family-dinner'
@@ -19,10 +23,29 @@ import { Route as MoodDateRouteImport } from './routes/mood/date'
 import { Route as MoodCoffeeGuffRouteImport } from './routes/mood/coffee-guff'
 import { Route as MoodBudgetHangoutRouteImport } from './routes/mood/budget-hangout'
 import { Route as MoodMoodIdRouteImport } from './routes/mood/$moodId'
+import { Route as BusinessAccountRouteImport } from './routes/business/account'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminSubmissionsRouteImport } from './routes/admin/submissions'
+import { Route as BusinessEditIdRouteImport } from './routes/business/edit/$id'
 
+const MySavesRoute = MySavesRouteImport.update({
+  id: '/my-saves',
+  path: '/my-saves',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyPlansRoute = MyPlansRouteImport.update({
+  id: '/my-plans',
+  path: '/my-plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BusinessRoute = BusinessRouteImport.update({
   id: '/business',
   path: '/business',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AddBusinessRoute = AddBusinessRouteImport.update({
@@ -33,6 +56,11 @@ const AddBusinessRoute = AddBusinessRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlacePlaceIdRoute = PlacePlaceIdRouteImport.update({
+  id: '/place/$placeId',
+  path: '/place/$placeId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MoodTouristDayOutRoute = MoodTouristDayOutRouteImport.update({
@@ -70,11 +98,37 @@ const MoodMoodIdRoute = MoodMoodIdRouteImport.update({
   path: '/mood/$moodId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessAccountRoute = BusinessAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => BusinessRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubmissionsRoute = AdminSubmissionsRouteImport.update({
+  id: '/submissions',
+  path: '/submissions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const BusinessEditIdRoute = BusinessEditIdRouteImport.update({
+  id: '/edit/$id',
+  path: '/edit/$id',
+  getParentRoute: () => BusinessRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/add-business': typeof AddBusinessRoute
-  '/business': typeof BusinessRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/business': typeof BusinessRouteWithChildren
+  '/my-plans': typeof MyPlansRoute
+  '/my-saves': typeof MySavesRoute
+  '/admin/submissions': typeof AdminSubmissionsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/business/account': typeof BusinessAccountRoute
   '/mood/$moodId': typeof MoodMoodIdRoute
   '/mood/budget-hangout': typeof MoodBudgetHangoutRoute
   '/mood/coffee-guff': typeof MoodCoffeeGuffRoute
@@ -82,11 +136,19 @@ export interface FileRoutesByFullPath {
   '/mood/family-dinner': typeof MoodFamilyDinnerRoute
   '/mood/quiet-work': typeof MoodQuietWorkRoute
   '/mood/tourist-day-out': typeof MoodTouristDayOutRoute
+  '/place/$placeId': typeof PlacePlaceIdRoute
+  '/business/edit/$id': typeof BusinessEditIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/add-business': typeof AddBusinessRoute
-  '/business': typeof BusinessRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/business': typeof BusinessRouteWithChildren
+  '/my-plans': typeof MyPlansRoute
+  '/my-saves': typeof MySavesRoute
+  '/admin/submissions': typeof AdminSubmissionsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/business/account': typeof BusinessAccountRoute
   '/mood/$moodId': typeof MoodMoodIdRoute
   '/mood/budget-hangout': typeof MoodBudgetHangoutRoute
   '/mood/coffee-guff': typeof MoodCoffeeGuffRoute
@@ -94,12 +156,20 @@ export interface FileRoutesByTo {
   '/mood/family-dinner': typeof MoodFamilyDinnerRoute
   '/mood/quiet-work': typeof MoodQuietWorkRoute
   '/mood/tourist-day-out': typeof MoodTouristDayOutRoute
+  '/place/$placeId': typeof PlacePlaceIdRoute
+  '/business/edit/$id': typeof BusinessEditIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/add-business': typeof AddBusinessRoute
-  '/business': typeof BusinessRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/business': typeof BusinessRouteWithChildren
+  '/my-plans': typeof MyPlansRoute
+  '/my-saves': typeof MySavesRoute
+  '/admin/submissions': typeof AdminSubmissionsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/business/account': typeof BusinessAccountRoute
   '/mood/$moodId': typeof MoodMoodIdRoute
   '/mood/budget-hangout': typeof MoodBudgetHangoutRoute
   '/mood/coffee-guff': typeof MoodCoffeeGuffRoute
@@ -107,13 +177,21 @@ export interface FileRoutesById {
   '/mood/family-dinner': typeof MoodFamilyDinnerRoute
   '/mood/quiet-work': typeof MoodQuietWorkRoute
   '/mood/tourist-day-out': typeof MoodTouristDayOutRoute
+  '/place/$placeId': typeof PlacePlaceIdRoute
+  '/business/edit/$id': typeof BusinessEditIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/add-business'
+    | '/admin'
     | '/business'
+    | '/my-plans'
+    | '/my-saves'
+    | '/admin/submissions'
+    | '/admin/users'
+    | '/business/account'
     | '/mood/$moodId'
     | '/mood/budget-hangout'
     | '/mood/coffee-guff'
@@ -121,11 +199,19 @@ export interface FileRouteTypes {
     | '/mood/family-dinner'
     | '/mood/quiet-work'
     | '/mood/tourist-day-out'
+    | '/place/$placeId'
+    | '/business/edit/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/add-business'
+    | '/admin'
     | '/business'
+    | '/my-plans'
+    | '/my-saves'
+    | '/admin/submissions'
+    | '/admin/users'
+    | '/business/account'
     | '/mood/$moodId'
     | '/mood/budget-hangout'
     | '/mood/coffee-guff'
@@ -133,11 +219,19 @@ export interface FileRouteTypes {
     | '/mood/family-dinner'
     | '/mood/quiet-work'
     | '/mood/tourist-day-out'
+    | '/place/$placeId'
+    | '/business/edit/$id'
   id:
     | '__root__'
     | '/'
     | '/add-business'
+    | '/admin'
     | '/business'
+    | '/my-plans'
+    | '/my-saves'
+    | '/admin/submissions'
+    | '/admin/users'
+    | '/business/account'
     | '/mood/$moodId'
     | '/mood/budget-hangout'
     | '/mood/coffee-guff'
@@ -145,12 +239,17 @@ export interface FileRouteTypes {
     | '/mood/family-dinner'
     | '/mood/quiet-work'
     | '/mood/tourist-day-out'
+    | '/place/$placeId'
+    | '/business/edit/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AddBusinessRoute: typeof AddBusinessRoute
-  BusinessRoute: typeof BusinessRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  BusinessRoute: typeof BusinessRouteWithChildren
+  MyPlansRoute: typeof MyPlansRoute
+  MySavesRoute: typeof MySavesRoute
   MoodMoodIdRoute: typeof MoodMoodIdRoute
   MoodBudgetHangoutRoute: typeof MoodBudgetHangoutRoute
   MoodCoffeeGuffRoute: typeof MoodCoffeeGuffRoute
@@ -158,15 +257,37 @@ export interface RootRouteChildren {
   MoodFamilyDinnerRoute: typeof MoodFamilyDinnerRoute
   MoodQuietWorkRoute: typeof MoodQuietWorkRoute
   MoodTouristDayOutRoute: typeof MoodTouristDayOutRoute
+  PlacePlaceIdRoute: typeof PlacePlaceIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/my-saves': {
+      id: '/my-saves'
+      path: '/my-saves'
+      fullPath: '/my-saves'
+      preLoaderRoute: typeof MySavesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-plans': {
+      id: '/my-plans'
+      path: '/my-plans'
+      fullPath: '/my-plans'
+      preLoaderRoute: typeof MyPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/business': {
       id: '/business'
       path: '/business'
       fullPath: '/business'
       preLoaderRoute: typeof BusinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/add-business': {
@@ -181,6 +302,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/place/$placeId': {
+      id: '/place/$placeId'
+      path: '/place/$placeId'
+      fullPath: '/place/$placeId'
+      preLoaderRoute: typeof PlacePlaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mood/tourist-day-out': {
@@ -232,13 +360,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoodMoodIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business/account': {
+      id: '/business/account'
+      path: '/account'
+      fullPath: '/business/account'
+      preLoaderRoute: typeof BusinessAccountRouteImport
+      parentRoute: typeof BusinessRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/submissions': {
+      id: '/admin/submissions'
+      path: '/submissions'
+      fullPath: '/admin/submissions'
+      preLoaderRoute: typeof AdminSubmissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/business/edit/$id': {
+      id: '/business/edit/$id'
+      path: '/edit/$id'
+      fullPath: '/business/edit/$id'
+      preLoaderRoute: typeof BusinessEditIdRouteImport
+      parentRoute: typeof BusinessRoute
+    }
   }
 }
+
+interface AdminRouteChildren {
+  AdminSubmissionsRoute: typeof AdminSubmissionsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminSubmissionsRoute: AdminSubmissionsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface BusinessRouteChildren {
+  BusinessAccountRoute: typeof BusinessAccountRoute
+  BusinessEditIdRoute: typeof BusinessEditIdRoute
+}
+
+const BusinessRouteChildren: BusinessRouteChildren = {
+  BusinessAccountRoute: BusinessAccountRoute,
+  BusinessEditIdRoute: BusinessEditIdRoute,
+}
+
+const BusinessRouteWithChildren = BusinessRoute._addFileChildren(
+  BusinessRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AddBusinessRoute: AddBusinessRoute,
-  BusinessRoute: BusinessRoute,
+  AdminRoute: AdminRouteWithChildren,
+  BusinessRoute: BusinessRouteWithChildren,
+  MyPlansRoute: MyPlansRoute,
+  MySavesRoute: MySavesRoute,
   MoodMoodIdRoute: MoodMoodIdRoute,
   MoodBudgetHangoutRoute: MoodBudgetHangoutRoute,
   MoodCoffeeGuffRoute: MoodCoffeeGuffRoute,
@@ -246,6 +431,7 @@ const rootRouteChildren: RootRouteChildren = {
   MoodFamilyDinnerRoute: MoodFamilyDinnerRoute,
   MoodQuietWorkRoute: MoodQuietWorkRoute,
   MoodTouristDayOutRoute: MoodTouristDayOutRoute,
+  PlacePlaceIdRoute: PlacePlaceIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

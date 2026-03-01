@@ -1,0 +1,14 @@
+services:
+  ramailo_frontend:
+    container_name: ramailo_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3003:3003"
+    environment:
+      - PORT=3003
+      - HOST=0.0.0.0
+      - VITE_BACKEND_URL=https://ramailo-backend.shreejayantinirmansewa.com
+      - BETTER_AUTH_URL=https://ramailo.shreejayantinirmansewa.com
+    restart: unless-stopped

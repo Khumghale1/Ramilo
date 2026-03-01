@@ -1,11 +1,15 @@
-import { useState, useRef } from "react"
-import { useRouter } from "@tanstack/react-router"
+import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { ArrowLeft, Upload, Clock, MapPin, LocateFixed, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { getMySubmissionById, updateMySubmission, type BusinessSubmission } from "@/lib/api"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"
 
-// Backend enum values
+interface EditBusinessProps {
+  id: string
+}
+
 const CATEGORIES = [
   { label: "Restaurant", value: "RESTAURANT" },
   { label: "Cafe", value: "CAFE" },
@@ -55,8 +59,12 @@ const BEST_FOR_OPTIONS = [
 
 const SPECIAL_FEATURES = ["WiFi", "Kid-friendly", "Outdoor", "Pet-friendly", "EV-Charging", "Parking Space"]
 
-export default function AddBusinessPage() {
-  const router = useRouter()
+export default function EditBusiness({ id }: EditBusinessProps) {
+  const navigate = useNavigate()
+
+  const [loading, setLoading] = useState(true)
+  const [submission, setSubmission] = useState<BusinessSubmission | null>(null)
+  const [error, setError] = useState("")
 
   const [businessName, setBusinessName] = useState("")
   const [category, setCategory] = useState("")
@@ -68,7 +76,8 @@ export default function AddBusinessPage() {
   const [alcoholServed, setAlcoholServed] = useState("")
   const [bestFor, setBestFor] = useState<string[]>([])
   const [features, setFeatures] = useState<string[]>([])
-  const [photos, setPhotos] = useState<File[]>([])
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([])
+  const [newPhotos, setNewPhotos] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationAddress, setLocationAddress] = useState("")
@@ -79,7 +88,45 @@ export default function AddBusinessPage() {
   const [openingHours, setOpeningHours] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState("")
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+
+  useEffect(() => {
+    loadSubmission()
+  }, [id])
+
+  async function loadSubmission() {
+    try {
+      setLoading(true)
+      const data = await getMySubmissionById(id)
+      setSubmission(data)
+
+      // Populate form fields
+      setBusinessName(data.businessName)
+      setCategory(data.category)
+      setArea(data.area)
+      setContact(data.contact)
+      setPriceRange(data.priceRange)
+      setParking(data.hasParking ? "Yes" : "No")
+      setCrowdLevel(data.crowdLevel)
+      setAlcoholServed(data.alcoholAvailable ? "Yes" : "No")
+      setBestFor(data.bestForMoods)
+      setExistingPhotos(data.photos)
+      setWebsite(data.website || "")
+      setInstagramHandle(data.instagramHandle || "")
+      setOpeningHours(data.openingHours || "")
+      setFeatures(data.specialFeatures || [])
+
+      if (data.latitude && data.longitude) {
+        setLocation({ lat: data.latitude, lng: data.longitude })
+      }
+      if (data.address) {
+        setLocationAddress(data.address)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load submission")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function toggleBestFor(option: string) {
     setBestFor((prev) =>
@@ -99,12 +146,19 @@ export default function AddBusinessPage() {
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
-      setPhotos((prev) => [...prev, ...Array.from(e.target.files!)].slice(0, 10))
+      const totalPhotos = existingPhotos.length + newPhotos.length + e.target.files.length
+      if (totalPhotos <= 10) {
+        setNewPhotos((prev) => [...prev, ...Array.from(e.target.files!)])
+      }
     }
   }
 
-  function removePhoto(index: number) {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
+  function removeExistingPhoto(index: number) {
+    setExistingPhotos((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function removeNewPhoto(index: number) {
+    setNewPhotos((prev) => prev.filter((_, i) => i !== index))
   }
 
   function detectLocation() {
@@ -119,7 +173,6 @@ export default function AddBusinessPage() {
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
         setLocation({ lat, lng })
-        // Reverse geocode using backend API
         try {
           const res = await fetch(`${API_URL}/api/geocode/reverse?lat=${lat}&lng=${lng}`)
           if (res.ok) {
@@ -129,7 +182,6 @@ export default function AddBusinessPage() {
             setLocationAddress(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
           }
         } catch {
-          // Fallback to coordinates if geocoding fails
           setLocationAddress(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
         }
         setLocationLoading(false)
@@ -144,48 +196,54 @@ export default function AddBusinessPage() {
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"))
-    setPhotos((prev) => [...prev, ...files].slice(0, 10))
+    const totalPhotos = existingPhotos.length + newPhotos.length + files.length
+    if (totalPhotos <= 10) {
+      setNewPhotos((prev) => [...prev, ...files])
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitError("")
-    setSubmitSuccess(false)
 
-    // Validation
-    if (!businessName || !category || !area || !contact || !priceRange || !parking || !crowdLevel || !alcoholServed || bestFor.length === 0) {
-      setSubmitError("Please fill in all required fields")
+    const totalPhotos = existingPhotos.length + newPhotos.length
+    if (totalPhotos < 3) {
+      setSubmitError("Please have at least 3 photos")
       return
     }
 
-    if (photos.length < 3) {
-      setSubmitError("Please upload at least 3 photos")
+    if (bestFor.length === 0) {
+      setSubmitError("Please select at least one 'Best For' option")
       return
     }
 
     setSubmitting(true)
 
     try {
-      // Step 1: Upload images
-      const formData = new FormData()
-      photos.forEach((photo) => formData.append("images", photo))
+      let allPhotos = [...existingPhotos]
 
-      const uploadRes = await fetch(`${API_URL}/api/upload/business`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      })
+      // Upload new photos if any
+      if (newPhotos.length > 0) {
+        const formData = new FormData()
+        newPhotos.forEach((photo) => formData.append("images", photo))
 
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json()
-        throw new Error(err.message || "Failed to upload images")
+        const uploadRes = await fetch(`${API_URL}/api/upload/business`, {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        })
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json()
+          throw new Error(err.message || "Failed to upload images")
+        }
+
+        const uploadData = await uploadRes.json()
+        allPhotos = [...allPhotos, ...uploadData.data.urls]
       }
 
-      const uploadData = await uploadRes.json()
-      const photoUrls: string[] = uploadData.data.urls
-
-      // Step 2: Submit business
-      const submissionData = {
+      // Update submission
+      await updateMySubmission(id, {
         businessName,
         category,
         area,
@@ -198,26 +256,14 @@ export default function AddBusinessPage() {
         crowdLevel,
         alcoholAvailable: alcoholServed === "Yes",
         bestForMoods: bestFor,
-        photos: photoUrls,
+        photos: allPhotos,
         website: website || undefined,
         instagramHandle: instagramHandle || undefined,
         openingHours: openingHours || undefined,
         specialFeatures: features.length > 0 ? features : undefined,
-      }
-
-      const submitRes = await fetch(`${API_URL}/api/business/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submissionData),
-        credentials: "include",
       })
 
-      if (!submitRes.ok) {
-        const err = await submitRes.json()
-        throw new Error(err.message || "Failed to submit business")
-      }
-
-      setSubmitSuccess(true)
+      navigate({ to: "/business" })
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong")
     } finally {
@@ -225,53 +271,52 @@ export default function AddBusinessPage() {
     }
   }
 
-  if (submitSuccess) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Submission Received!</h2>
-            <p className="text-gray-500 mb-6">We'll review your business within 24 hours and get back to you.</p>
-            <button
-              onClick={() => router.history.back()}
-              className="bg-[#CA4141] hover:bg-[#b33636] text-white font-medium py-2 px-6 rounded-xl transition-colors text-sm"
-            >
-              Back to Home
-            </button>
-          </div>
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-[#CA4141]" />
       </div>
     )
   }
 
+  if (error || !submission) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        {error || "Submission not found"}
+      </div>
+    )
+  }
+
+  if (submission.status !== "PENDING") {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+        You can only edit pending submissions.
+      </div>
+    )
+  }
+
+  const totalPhotos = existingPhotos.length + newPhotos.length
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        {/* Back */}
-        <button
-        onClick={() => router.history.back()}
+    <div>
+      {/* Back */}
+      <button
+        onClick={() => navigate({ to: "/business" })}
         className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 mb-5 transition-colors"
       >
         <ArrowLeft size={16} />
-        Back
+        Back to Dashboard
       </button>
 
       {/* Heading */}
-      <h1 className="text-3xl font-bold text-gray-900 mb-1">Add Your Business</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Edit Business</h1>
       <p className="text-gray-500 text-sm mb-6">
-        Share your business with local explorers. Get reviewed and featured within 24 hours.
+        Update your business details. Changes will be reviewed before going live.
       </p>
 
       {/* Form Card */}
       <div className="bg-white border border-gray-200 rounded-2xl p-8">
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-
-          {/* Error Message */}
           {submitError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {submitError}
@@ -351,12 +396,10 @@ export default function AddBusinessPage() {
 
           {/* Location */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-800">
-              Location <span className="text-[#CA4141]">*</span>
-            </label>
+            <label className="text-sm font-semibold text-gray-800">Location</label>
             <div className="flex gap-2">
               <Input
-                placeholder="Address will appear here after detection"
+                placeholder="Address"
                 value={locationAddress}
                 onChange={(e) => setLocationAddress(e.target.value)}
                 className="rounded-lg flex-1"
@@ -372,9 +415,7 @@ export default function AddBusinessPage() {
               </button>
             </div>
 
-            {locationError && (
-              <p className="text-xs text-red-500">{locationError}</p>
-            )}
+            {locationError && <p className="text-xs text-red-500">{locationError}</p>}
 
             {location && (
               <>
@@ -505,23 +546,63 @@ export default function AddBusinessPage() {
             </div>
           </div>
 
-          {/* Upload Photos */}
+          {/* Photos */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-gray-800">
-              Upload Photos (3-10 images) <span className="text-[#CA4141]">*</span>
+              Photos (3-10 images) <span className="text-[#CA4141]">*</span>
             </label>
 
-            {/* Drop zone — hide when 10 photos reached */}
-            {photos.length < 10 && (
+            {/* Existing Photos */}
+            {existingPhotos.length > 0 && (
+              <div className="grid grid-cols-5 gap-2 mb-2">
+                {existingPhotos.map((url, index) => (
+                  <div key={url} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                    <img src={url} alt={`photo-${index}`} className="w-full h-20 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingPhoto(index)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-[#CA4141] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* New Photos */}
+            {newPhotos.length > 0 && (
+              <div className="grid grid-cols-5 gap-2 mb-2">
+                {newPhotos.map((file, index) => (
+                  <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`new-${index}`}
+                      className="w-full h-20 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeNewPhoto(index)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-[#CA4141] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload Zone */}
+            {totalPhotos < 10 && (
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
-                className="border-2 border-dashed border-gray-300 rounded-xl py-10 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#CA4141]/50 transition-colors"
+                className="border-2 border-dashed border-gray-300 rounded-xl py-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#CA4141]/50 transition-colors"
               >
-                <Upload size={28} className="text-[#CA4141]" />
+                <Upload size={24} className="text-[#CA4141]" />
                 <p className="text-sm text-gray-400">Click to upload or drag and drop</p>
-                <p className="text-xs text-gray-300">{photos.length}/10 uploaded</p>
+                <p className="text-xs text-gray-300">{totalPhotos}/10 uploaded</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -530,28 +611,6 @@ export default function AddBusinessPage() {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-              </div>
-            )}
-
-            {/* Photo previews */}
-            {photos.length > 0 && (
-              <div className="grid grid-cols-5 gap-2 mt-1">
-                {photos.map((file, index) => (
-                  <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200 h-fit">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`upload-${index}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-[#CA4141] text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
               </div>
             )}
           </div>
@@ -584,7 +643,7 @@ export default function AddBusinessPage() {
             <label className="text-sm font-semibold text-gray-800">Opening Hours</label>
             <div className="relative">
               <Input
-                placeholder="e.g. Mon–Fri 9am–9pm"
+                placeholder="e.g. Mon-Fri 9am-9pm"
                 value={openingHours}
                 onChange={(e) => setOpeningHours(e.target.value)}
                 className="rounded-lg pr-10"
@@ -622,15 +681,13 @@ export default function AddBusinessPage() {
             {submitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Submitting...
+                Saving...
               </>
             ) : (
-              "Submit Your Business"
+              "Save Changes"
             )}
           </button>
-
         </form>
-      </div>
       </div>
     </div>
   )
