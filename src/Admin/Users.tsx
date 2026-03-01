@@ -32,19 +32,19 @@ export default function AdminUsers() {
     }
   }
 
-  async function handleRoleChange(userId: string, newRole: "USER" | "BUSINESS_USER") {
-    try {
-      setActionLoading(userId)
-      await updateUserRole(userId, newRole)
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-      )
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update role")
-    } finally {
-      setActionLoading(null)
-    }
-  }
+  // async function handleRoleChange(userId: string, newRole: "USER" | "BUSINESS_USER") {
+  //   try {
+  //     setActionLoading(userId)
+  //     await updateUserRole(userId, newRole)
+  //     setUsers((prev) =>
+  //       prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+  //     )
+  //   } catch (err) {
+  //     alert(err instanceof Error ? err.message : "Failed to update role")
+  //   } finally {
+  //     setActionLoading(null)
+  //   }
+  // }
 
   async function handleDelete(userId: string, userName: string) {
     if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
@@ -85,11 +85,10 @@ export default function AdminUsers() {
           <button
             key={tab.label}
             onClick={() => setActiveTab(tab.value)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.value
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.value
                 ? "border-[#CA4141] text-[#CA4141]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -140,7 +139,7 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <select
+                    {/* <select
                       value={user.role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value as "USER" | "BUSINESS_USER")}
                       disabled={actionLoading === user.id}
@@ -152,7 +151,16 @@ export default function AdminUsers() {
                     >
                       <option value="USER">User</option>
                       <option value="BUSINESS_USER">Business User</option>
-                    </select>
+                    </select> */}
+                    <span
+                      className={`text-sm border rounded-lg px-3 py-1 font-medium ${user.role === "BUSINESS_USER"
+                          ? "bg-purple-50 border-purple-200 text-purple-700"
+                          : "bg-blue-50 border-blue-200 text-blue-700"
+                        }`}
+                    >
+                      {user.role === "BUSINESS_USER" ? "Business User" : "User"}
+                    </span>
+
                   </td>
                   <td className="px-6 py-4">
                     {user._count.businessSubmissions > 0 ? (
@@ -161,7 +169,9 @@ export default function AdminUsers() {
                         {user._count.businessSubmissions}
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400">-</span>
+                      <span className="flex items-center gap-1 text-sm text-gray-600">
+                        <UsersIcon size={14} />
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">

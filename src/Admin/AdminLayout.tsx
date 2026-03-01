@@ -65,9 +65,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#CA4141] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R</span>
-            </div>
+           
             <span className="font-semibold text-gray-900">Admin Panel</span>
           </div>
           <button

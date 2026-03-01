@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Bell, ChevronDown, LogOut, User, Settings, Home } from 'lucide-react'
+import { ChevronDown, LogOut, User, Settings, Home } from 'lucide-react'
 import { useSession, signOut } from '@/lib/auth-client'
 import { getMe, type User as UserType } from '@/lib/api'
 
@@ -61,12 +61,6 @@ export default function DashboardHeader({ title, variant = 'business' }: Dashboa
           <Home className="w-4 h-4" />
           <span>Main Site</span>
         </Link>
-
-        {/* Notifications */}
-        <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className={`absolute top-1.5 right-1.5 w-2 h-2 ${bgAccent} rounded-full`} />
-        </button>
 
         {/* User Dropdown */}
         {session?.user && (
